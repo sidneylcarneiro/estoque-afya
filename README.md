@@ -80,7 +80,7 @@ sudo usermod -aG docker $USER
 Abra o seu terminal (PowerShell no Windows ou o terminal no Linux) e clone **especificamente a branch `afya`**:
 
 ```
-git clone --branch afya [https://github.com/sidneylcarneiro/estoque-materiais.git](https://github.com/sidneylcarneiro/estoque-materiais.git)
+git clone --branch afya https://github.com/sidneylcarneiro/estoque-materiais.git
 cd estoque-materiais
 
 ```
@@ -156,6 +156,10 @@ DATABASE_URL="postgresql://admin:SENHA_FORTE_PARA_O_BANCO_DE_DADOS@db:5432/estoq
 # Credenciais padrão para a criação do admin.
 ADMIN_DEFAULT_USERNAME="admin"
 ADMIN_DEFAULT_PASSWORD="SENHA_FORTE_PARA_O_BANCO_DE_DADOS"
+
+# Define o prefixo sob o qual a aplicação é servida.
+# Deve corresponder à regra 'location' no Nginx.
+ROOT_PATH="/estoque"
 
 ```
 

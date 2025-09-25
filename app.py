@@ -12,8 +12,7 @@ import crud, models, schemas
 from database import SessionLocal, engine, Base
 from config import settings
 
-# --- AQUI ESTÁ A CORREÇÃO CRUCIAL ---
-# Ao criar a aplicação, passamos o root_path das nossas configurações.
+# A aplicação é criada com o 'root_path' para funcionar atrás do NGINX
 app = FastAPI(
     title="Sistema de Gestão de Estoque",
     description="API para gerenciar usuários, estoque e logs de atividades.",
@@ -72,13 +71,11 @@ def require_regular_user(current_user: Annotated[models.User, Depends(get_curren
     return current_user
 
 # =================================
-# Rotas de Interface (HTML) - COM CORREÇÃO
+# Rotas de Interface (HTML) - Com Root Path
 # =================================
-# A variável 'root_path' é agora passada para TODOS os templates.
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def root():
-    # O redirecionamento interno não precisa do prefixo, o FastAPI trata disso.
     return RedirectResponse(url="/login")
 
 @app.get("/login", response_class=HTMLResponse, include_in_schema=False)
@@ -232,5 +229,4 @@ def export_stock_to_excel(search: str = "", db: Session = Depends(get_db)):
     filename = f"relatorio_inventario_{search}.xlsx" if search else "relatorio_inventario_completo.xlsx"
     headers = {'Content-Disposition': f'attachment; filename="{filename}"'}
     return StreamingResponse(output, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers=headers)
-
 
