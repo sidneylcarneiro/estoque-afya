@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, status, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse, FileResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -20,6 +20,10 @@ app = FastAPI(
 
 # Configuração dos templates
 templates = Jinja2Templates(directory="templates")
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse("static/favicon.ico")
 
 # Função para obter a sessão do banco de dados
 def get_db():
@@ -146,7 +150,6 @@ def delete_user(user_id: int, db: Session = Depends(get_db), current_admin: mode
     crud.create_log_entry(db=db, username=current_admin.username, action=f"Excluiu o usuário '{deleted_user.username}' (ID: {user_id})")
     return deleted_user
 
-# ... (o resto do ficheiro permanece o mesmo) ...
 
 # =================================
 # Endpoints da API de Inventário
