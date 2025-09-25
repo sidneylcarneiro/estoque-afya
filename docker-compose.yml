@@ -1,7 +1,5 @@
 # docker-compose.yml
 
-version: '3.8'
-
 services:
   # Serviço 1: O Banco de Dados PostgreSQL
   db:
@@ -24,9 +22,8 @@ services:
   app:
     container_name: estoque-app
     build: .
-    # A porta 8000 já não é exposta ao exterior. Apenas o Nginx fala com ela.
-    # ports:
-    #   - "8000:8000"
+    ports:
+      - "8000:8000"
     env_file:
       - .env
     depends_on:
@@ -34,22 +31,18 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # Serviço 3: O Proxy Reverso NGINX (O nosso "Recepcionista")
+  # Serviço 3: O Proxy Reverso NGINX
   nginx:
     image: nginx:alpine
     container_name: estoque-proxy
     ports:
-      # Expõe a porta principal 80 do servidor ao mundo.
       - "80:80"
     volumes:
-      # Mapeia o nosso ficheiro de configuração para dentro do container do Nginx.
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
     depends_on:
-      # Garante que o Nginx só inicia depois da nossa aplicação estar pronta.
       - app
     restart: unless-stopped
 
-# Define os volumes que serão geridos pelo Docker.
 volumes:
   postgres_data:
 

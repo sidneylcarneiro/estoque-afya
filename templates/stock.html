@@ -3,35 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão de Inventário - Afya</title>
+    <title>Gestão de Inventário - Sistema de Estoque</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         :root {
-            --afya-pink: #E8388B;
-            --afya-pink-hover: #d12c7a;
+            --theme-pink: #E8388B;
+            --theme-pink-hover: #d12c7a;
         }
-        body { 
-            background-color: #f0f2f5; 
+        body {
+            background-color: #f0f2f5;
         }
-        .stock-card { 
+        .stock-card {
             margin-top: 3rem;
             border: none;
             border-radius: 1rem;
         }
         .card-title {
-            color: var(--afya-pink);
+            color: var(--theme-pink);
             font-weight: 700;
         }
         .btn-primary {
-            background-color: var(--afya-pink);
-            border-color: var(--afya-pink);
+            background-color: var(--theme-pink);
+            border-color: var(--theme-pink);
         }
         .btn-primary:hover {
-            background-color: var(--afya-pink-hover);
-            border-color: var(--afya-pink-hover);
+            background-color: var(--theme-pink-hover);
+            border-color: var(--theme-pink-hover);
         }
-        .action-buttons button { 
-            margin: 0 2px; 
+        .action-buttons button {
+            margin: 0 2px;
         }
     </style>
 </head>
@@ -43,10 +43,10 @@
                     <h1 class="card-title mb-0">Gestão de Inventário</h1>
                     <div class="btn-group">
                         <button id="export-btn" class="btn btn-success">Exportar para Excel</button>
-                        <a href="/profile" class="btn btn-outline-secondary">Voltar ao Perfil</a>
+                        <a id="profile-link" href="#" class="btn btn-outline-secondary">Voltar ao Perfil</a>
                     </div>
                 </div>
-                
+
                 <form id="search-form" class="mb-3">
                     <div class="input-group">
                         <input type="text" id="search-input" class="form-control" placeholder="Procurar por nome do item...">
@@ -100,10 +100,12 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        const ROOT_PATH = "{{ root_path|default('', true) }}";
+
         window.onload = async function() {
             const token = localStorage.getItem('access_token');
             if (!token) {
-                window.location.href = '/login';
+                window.location.href = `${ROOT_PATH}/login`;
                 return;
             }
 
@@ -113,9 +115,11 @@
             const searchInput = document.getElementById('search-input');
             const exportButton = document.getElementById('export-btn');
 
+            document.getElementById('profile-link').href = `${ROOT_PATH}/profile`;
+
             async function fetchAndRenderStock(searchTerm = '') {
                 try {
-                    const response = await fetch(`/stock/?search=${encodeURIComponent(searchTerm)}`, {
+                    const response = await fetch(`${ROOT_PATH}/stock/?search=${encodeURIComponent(searchTerm)}`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
 
@@ -131,7 +135,7 @@
                         tableBody.innerHTML = '<tr><td colspan="5" class="text-center">Nenhum item encontrado.</td></tr>';
                         return;
                     }
-                    
+
                     items.forEach(item => {
                         const row = `
                             <tr>
@@ -154,11 +158,11 @@
                     errorDiv.classList.remove('d-none');
                 }
             }
-            
+
             exportButton.addEventListener('click', async () => {
                 const searchTerm = searchInput.value.trim();
                 try {
-                    const response = await fetch(`/stock/export/excel?search=${encodeURIComponent(searchTerm)}`, {
+                    const response = await fetch(`${ROOT_PATH}/stock/export/excel?search=${encodeURIComponent(searchTerm)}`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
 
@@ -173,7 +177,7 @@
                     a.download = filename;
                     document.body.appendChild(a);
                     a.click();
-                    
+
                     window.URL.revokeObjectURL(url);
                     document.body.removeChild(a);
 
@@ -192,7 +196,7 @@
                 if (target.classList.contains('btn-danger')) {
                     if (confirm(`Tem certeza que deseja excluir o item "${itemName}"? Esta ação não pode ser desfeita.`)) {
                         try {
-                             const res = await fetch(`/stock/${itemId}`, { 
+                             const res = await fetch(`${ROOT_PATH}/stock/${itemId}`, {
                                 method: 'DELETE',
                                 headers: { 'Authorization': `Bearer ${token}` }
                              });
@@ -223,7 +227,7 @@
                 const quantity = document.getElementById('movement-quantity').value;
 
                 try {
-                    const res = await fetch(`/stock/${itemId}`, {
+                    const res = await fetch(`${ROOT_PATH}/stock/${itemId}`, {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
@@ -243,7 +247,7 @@
                     alert(err.message);
                 }
             });
-            
+
             document.getElementById('search-form').addEventListener('submit', (event) => {
                 event.preventDefault();
                 const searchTerm = searchInput.value.trim();

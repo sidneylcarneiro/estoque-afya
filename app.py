@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, status, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse, FileResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -12,18 +12,17 @@ import crud, models, schemas
 from database import SessionLocal, engine, Base
 from config import settings
 
+# --- AQUI ESTÁ A CORREÇÃO CRUCIAL ---
+# Ao criar a aplicação, passamos o root_path das nossas configurações.
 app = FastAPI(
-    title="Sistema de Gestão de Estoque Afya",
+    title="Sistema de Gestão de Estoque",
     description="API para gerenciar usuários, estoque e logs de atividades.",
-    version="1.0.0"
+    version="1.0.0",
+    root_path=settings.ROOT_PATH
 )
 
 # Configuração dos templates
 templates = Jinja2Templates(directory="templates")
-
-@app.get("/favicon.ico", include_in_schema=False)
-async def favicon():
-    return FileResponse("static/favicon.ico")
 
 # Função para obter a sessão do banco de dados
 def get_db():
@@ -73,34 +72,37 @@ def require_regular_user(current_user: Annotated[models.User, Depends(get_curren
     return current_user
 
 # =================================
-# Rotas de Interface (HTML)
+# Rotas de Interface (HTML) - COM CORREÇÃO
 # =================================
+# A variável 'root_path' é agora passada para TODOS os templates.
+
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def root():
+    # O redirecionamento interno não precisa do prefixo, o FastAPI trata disso.
     return RedirectResponse(url="/login")
 
 @app.get("/login", response_class=HTMLResponse, include_in_schema=False)
 async def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse("login.html", {"request": request, "root_path": settings.ROOT_PATH})
 
 @app.get("/profile", response_class=HTMLResponse, include_in_schema=False)
 async def profile_page(request: Request):
-    return templates.TemplateResponse("profile.html", {"request": request})
+    return templates.TemplateResponse("profile.html", {"request": request, "root_path": settings.ROOT_PATH})
 
 @app.get("/admin", response_class=HTMLResponse, include_in_schema=False)
 async def admin_page(request: Request):
-    return templates.TemplateResponse("admin.html", {"request": request})
+    return templates.TemplateResponse("admin.html", {"request": request, "root_path": settings.ROOT_PATH})
 
 @app.get("/stock", response_class=HTMLResponse, include_in_schema=False)
 async def stock_page(request: Request):
-    return templates.TemplateResponse("stock.html", {"request": request})
+    return templates.TemplateResponse("stock.html", {"request": request, "root_path": settings.ROOT_PATH})
 
 @app.get("/logs", response_class=HTMLResponse, include_in_schema=False)
 async def logs_page(request: Request):
-    return templates.TemplateResponse("logs.html", {"request": request})
+    return templates.TemplateResponse("logs.html", {"request": request, "root_path": settings.ROOT_PATH})
 
 # =================================
-# Endpoints da API de Autenticação e Utilizadores
+# Endpoints da API (O resto do ficheiro permanece o mesmo)
 # =================================
 
 @app.post("/token", response_model=schemas.Token)
@@ -119,7 +121,6 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
 async def read_users_me(current_user: Annotated[models.User, Depends(get_current_user)]):
     return current_user
 
-# --- AQUI ESTÁ A ALTERAÇÃO ---
 @app.get("/public/users", response_model=List[schemas.UserPublic])
 def get_public_user_list(db: Session = Depends(get_db)):
     return crud.get_users(db)
@@ -149,11 +150,6 @@ def delete_user(user_id: int, db: Session = Depends(get_db), current_admin: mode
     deleted_user = crud.delete_user(db=db, user_id=user_id)
     crud.create_log_entry(db=db, username=current_admin.username, action=f"Excluiu o usuário '{deleted_user.username}' (ID: {user_id})")
     return deleted_user
-
-
-# =================================
-# Endpoints da API de Inventário
-# =================================
 
 @app.post("/stock/", response_model=schemas.StockItem, dependencies=[Depends(require_regular_user)])
 def create_stock_item(item: schemas.StockItemCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
@@ -202,10 +198,6 @@ def delete_stock_item(item_id: int, db: Session = Depends(get_db), current_user:
     crud.create_log_entry(db=db, username=current_user.username, action=f"Excluiu o item de inventário '{item_name}'")
     return deleted_item
 
-# =================================
-# Endpoints da API de Logs
-# =================================
-
 @app.get("/logs/", response_model=List[schemas.LogEntry], dependencies=[Depends(require_admin)])
 def get_logs(db: Session = Depends(get_db)):
     return crud.get_log_entries(db)
@@ -240,4 +232,5 @@ def export_stock_to_excel(search: str = "", db: Session = Depends(get_db)):
     filename = f"relatorio_inventario_{search}.xlsx" if search else "relatorio_inventario_completo.xlsx"
     headers = {'Content-Disposition': f'attachment; filename="{filename}"'}
     return StreamingResponse(output, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers=headers)
+
 
