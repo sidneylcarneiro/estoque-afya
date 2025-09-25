@@ -8,6 +8,11 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    
+    # --- NOVA CONFIGURAÇÃO ADICIONADA AQUI ---
+    # Define o prefixo de caminho sob o qual a aplicação é servida.
+    # Deve corresponder à regra 'location' no Nginx.
+    ROOT_PATH: str = ""
 
     # Configurações do Banco de Dados
     DATABASE_URL: str
@@ -21,3 +26,4 @@ class Settings(BaseSettings):
 
 # Cria uma instância única das configurações que será usada em toda a aplicação
 settings = Settings()
+
