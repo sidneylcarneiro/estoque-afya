@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, status, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse, FileResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -12,18 +12,17 @@ import crud, models, schemas
 from database import SessionLocal, engine, Base
 from config import settings
 
+# --- AQUI ESTÁ A CORREÇÃO FINAL ---
+# Ao criar a aplicação, passamos o root_path das nossas configurações.
 app = FastAPI(
-    title="Sistema de Gestão de Estoque Afya",
+    title="Sistema de Gestão de Estoque",
     description="API para gerenciar usuários, estoque e logs de atividades.",
-    version="1.0.0"
+    version="1.0.0",
+    root_path=settings.ROOT_PATH
 )
 
 # Configuração dos templates
 templates = Jinja2Templates(directory="templates")
-
-@app.get("/favicon.ico", include_in_schema=False)
-async def favicon():
-    return FileResponse("static/favicon.ico")
 
 # Função para obter a sessão do banco de dados
 def get_db():
@@ -119,7 +118,6 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
 async def read_users_me(current_user: Annotated[models.User, Depends(get_current_user)]):
     return current_user
 
-# --- AQUI ESTÁ A ALTERAÇÃO ---
 @app.get("/public/users", response_model=List[schemas.UserPublic])
 def get_public_user_list(db: Session = Depends(get_db)):
     return crud.get_users(db)
@@ -149,7 +147,6 @@ def delete_user(user_id: int, db: Session = Depends(get_db), current_admin: mode
     deleted_user = crud.delete_user(db=db, user_id=user_id)
     crud.create_log_entry(db=db, username=current_admin.username, action=f"Excluiu o usuário '{deleted_user.username}' (ID: {user_id})")
     return deleted_user
-
 
 # =================================
 # Endpoints da API de Inventário
