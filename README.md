@@ -157,6 +157,10 @@ DATABASE_URL="postgresql://admin:SENHA_FORTE_PARA_O_BANCO_DE_DADOS@db:5432/estoq
 ADMIN_DEFAULT_USERNAME="admin"
 ADMIN_DEFAULT_PASSWORD="SENHA_FORTE_PARA_O_BANCO_DE_DADOS"
 
+# Define o prefixo sob o qual a aplicação é servida.
+# Deve corresponder à regra 'location' no Nginx.
+ROOT_PATH="/estoque"
+
 ```
 
 ### Passo 4: Construir e Executar a Aplicação
