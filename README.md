@@ -80,7 +80,7 @@ sudo usermod -aG docker $USER
 Abra o seu terminal (PowerShell no Windows ou o terminal no Linux) e clone **especificamente a branch `afya`**:
 
 ```
-git clone --branch afya [https://github.com/sidneylcarneiro/estoque-materiais.git](https://github.com/sidneylcarneiro/estoque-materiais.git)
+git clone --branch afya https://github.com/sidneylcarneiro/estoque-materiais.git
 cd estoque-materiais
 
 ```
