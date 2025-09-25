@@ -1,178 +1,196 @@
 
-````markdown
-# 📦 Sistema de Gestão de Estoque
+# Sistema de Gestão de Estoque
 
 Este é um sistema web completo para **gestão de estoque**, desenvolvido com **FastAPI** e **PostgreSQL**, e totalmente containerizado com **Docker** para garantir um deploy simples e consistente.
 
-A aplicação permite:
-
-- Controle de usuários com diferentes níveis de permissão  
-- Gestão de inventário  
-- Relatório detalhado de todas as atividades com **opção de exportação para Excel**
-
----
+A aplicação permite o controle de usuários com diferentes níveis de permissão, gestão de inventário e um relatório detalhado de todas as atividades com opção de exportação para Excel.
 
 ## 🏛️ Visão Geral da Arquitetura
 
-A aplicação é orquestrada pelo **Docker Compose** e é composta por dois serviços principais que se comunicam numa **rede interna Docker**:
+A aplicação é orquestrada pelo **Docker Compose** e é composta por três serviços principais que se comunicam numa rede interna do Docker:
 
-- **`app`**: Um container que executa a aplicação **FastAPI**, construído a partir de uma imagem customizada definida no `Dockerfile`. Serve a **API** e a **interface web** na porta `8000`.
-- **`db`**: Um container que executa o **PostgreSQL**, utilizando a imagem oficial. Os dados são persistidos em um volume Docker, evitando perdas de dados.
+1.  **`db`**: Um container que executa o banco de dados **PostgreSQL**. Ele utiliza a imagem oficial do Postgres e persiste os dados em um volume Docker.
+    
+2.  **`app`**: Um container que executa a aplicação **FastAPI**. Ele é construído a partir de uma imagem customizada definida no `Dockerfile` e processa toda a lógica de negócio.
+    
+3.  **`nginx`**: Um container que atua como **Proxy Reverso**. Ele é o único ponto de entrada para a aplicação, recebendo as requisições na porta `80` e encaminhando-as de forma segura para o serviço `app`.
+    
 
-> Esta arquitetura garante portabilidade e consistência em qualquer máquina com Docker instalado.
-
----
+Esta arquitetura garante que a aplicação seja portátil, segura e funcione da mesma forma em qualquer máquina que tenha o Docker instalado.
 
 ## 🚀 Tecnologias Utilizadas
 
-- **Backend**: Python 3.11, FastAPI  
-- **Banco de Dados**: PostgreSQL  
-- **Frontend**: HTML5, CSS3, JavaScript, Bootstrap 5  
-- **Containerização**: Docker, Docker Compose  
-- **ORM**: SQLAlchemy  
-- **Autenticação**: JWT (JSON Web Tokens) com senhas criptografadas via `bcrypt`  
-- **Configuração**: Pydantic Settings com arquivos `.env`  
-- **Servidor ASGI**: Uvicorn  
-- **Exportação de Dados**: Pandas & openpyxl  
-
----
+-   **Backend:** Python 3.11, FastAPI
+    
+-   **Banco de Dados:** PostgreSQL
+    
+-   **Frontend:** HTML5, CSS3, JavaScript, Bootstrap 5
+    
+-   **Proxy Reverso:** NGINX
+    
+-   **Containerização:** Docker, Docker Compose
+    
+-   **ORM:** SQLAlchemy
+    
+-   **Autenticação:** JWT (JSON Web Tokens) com senhas criptografadas (bcrypt)
+    
+-   **Configuração:** Pydantic Settings (com arquivos `.env`)
+    
+-   **Servidor ASGI:** Uvicorn
+    
+-   **Exportação de Dados:** Pandas & openpyxl
+    
 
 ## 🛠️ Guia de Deploy (Servidor de Produção)
 
-Siga os passos abaixo para clonar, configurar e executar a aplicação em um servidor de produção.
+Siga estes passos para clonar, configurar e executar a aplicação em um servidor definitivo.
 
----
+### Pré-requisitos no Servidor
 
-### ✅ Pré-requisitos no Servidor
-
-Garanta que o servidor (Linux ou Windows) tenha o **Git** e o **Docker** instalados.
+Garanta que o seu servidor (Linux ou Windows) tenha o **Git** e o **Docker** instalados.
 
 #### Para Servidor Linux (Ubuntu/Debian)
 
-```bash
+```
 # Atualiza os pacotes e instala o Git, Docker e Docker Compose
 sudo apt update
 sudo apt install -y git docker.io docker-compose
-
-# Inicia e habilita o Docker
+# Inicia e habilita o serviço do Docker para iniciar com o sistema
 sudo systemctl start docker
 sudo systemctl enable docker
-
-# (Opcional) Permite rodar docker sem sudo
+# Adiciona o seu usuário ao grupo do Docker para não precisar usar 'sudo' (opcional)
+# NOTA: Você precisará fazer logout e login novamente para que esta alteração tenha efeito.
 sudo usermod -aG docker $USER
-````
 
-> ℹ️ É necessário **logout/login** após adicionar o usuário ao grupo `docker`.
-
----
+```
 
 #### Para Servidor Windows (Windows 11 / Windows Server)
 
-1. Instale o Git: [Git for Windows](https://git-scm.com/download/win)
-2. Instale o Docker Desktop: [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop)
+1.  **Instale o Git:** Baixe e instale o [**Git for Windows**](https://git-scm.com/download/win "null").
+    
+2.  **Instale o Docker Desktop:** Baixe e instale o [**Docker Desktop for Windows**](https://www.docker.com/products/docker-desktop/ "null"). Ele já inclui o **Docker Compose**.
+    
+    -   Durante a instalação, certifique-se de que a opção para usar o backend **WSL 2** está selecionada.
+        
+    -   Nas configurações do Docker Desktop, garanta que a opção **"Start Docker Desktop when you log in"** está ativada.
+        
 
-Durante a instalação do Docker:
+### Passo 1: Clonar a Branch de Deploy
 
-* Ative a opção para usar o **WSL 2 Backend**
-* Nas configurações, ative **"Start Docker Desktop when you log in"**
+Abra o seu terminal (PowerShell no Windows ou o terminal no Linux) e clone **especificamente a branch `afya`**:
 
----
-
-## 📦 Deploy da Aplicação
-
-### 🔁 Passo 1: Clonar a Branch de Deploy
-
-```bash
-git clone --branch afya https://github.com/sidneylcarneiro/estoque-materiais.git
+```
+git clone --branch afya [https://github.com/sidneylcarneiro/estoque-materiais.git](https://github.com/sidneylcarneiro/estoque-materiais.git)
 cd estoque-materiais
+
 ```
 
----
+### Passo 2: Criar a Configuração do NGINX
 
-### 🔐 Passo 2: Configurar as Variáveis de Ambiente
+Crie a pasta e o arquivo de configuração para o nosso proxy reverso.
 
-Crie o arquivo `.env` com as configurações sensíveis da aplicação.
+```
+# Crie a pasta 'nginx'
+mkdir nginx
 
-#### No Windows (PowerShell)
+```
 
-```powershell
+Agora, crie o arquivo`nginx.conf` dentro desta nova pasta (com `notepad nginx/nginx.conf` no Windows ou `nano nginx/nginx.conf` no Linux) e cole o seguinte conteúdo:
+
+```
+# nginx/nginx.conf
+# Esta configuração permite servir múltiplas aplicações no mesmo servidor.
+events {}
+http {
+    server {
+        listen 80;
+
+        # Rota para a aplicação de Estoque
+        # Acessível via http://HOSTNAME_DO_SERVIDOR/estoque
+        location /estoque/ {
+            # Reescreve o URL para remover o /estoque antes de enviar para a aplicação
+            rewrite ^/estoque/(.*)$ /$1 break;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            # Encaminha para o serviço 'app' do nosso docker-compose
+            proxy_pass http://app:8000;
+        }
+
+        # Rota para uma SEGUNDA APLICAÇÃO (exemplo)
+        # Acessível via http://HOSTNAME_DO_SERVIDOR/outra-app
+        location /outra-app/ {
+            # proxy_pass http://nome_do_outro_servico:porta;
+        }
+    }
+}
+
+```
+
+### Passo 3: Configurar as Variáveis de Ambiente
+
+Crie o arquivo`.env` na raiz do projeto.
+
+```
+# No Windows (PowerShell):
 New-Item .env
-notepad .env
-```
-
-#### No Linux
-
-```bash
+# No Linux:
 touch .env
-nano .env
+
 ```
 
-Cole o seguinte conteúdo no `.env`, ajustando os valores:
+Edite o arquivo`.env` e cole o seguinte conteúdo, **ajustando os valores para produção**:
 
-```env
+```
 # .env (Configuração para o Servidor de Produção)
 
-# IMPORTANTE: Gere uma chave segura com o comando:
-# openssl rand -hex 32
+# IMPORTANTE: Gere uma chave nova e segura para o ambiente de produção.
+# No Linux, pode usar o comando: openssl rand -hex 32
 SECRET_KEY="SUA_CHAVE_SECRETA_DE_PRODUCAO_MUITO_FORTE_AQUI"
 
-# NÃO ALTERE O HOST 'db'
+# IMPORTANTE: Altere a senha do banco de dados para uma senha forte.
+# Esta senha será usada tanto pelo serviço 'db' como pela aplicação.
 DATABASE_URL="postgresql://admin:SENHA_FORTE_PARA_O_BANCO_DE_DADOS@db:5432/estoque_db"
 
-# Credenciais padrão para o usuário administrador
+# Credenciais padrão para a criação do admin.
 ADMIN_DEFAULT_USERNAME="admin"
 ADMIN_DEFAULT_PASSWORD="SENHA_FORTE_PARA_O_BANCO_DE_DADOS"
+
 ```
 
----
+### Passo 4: Construir e Executar a Aplicação
 
-### 🏗️ Passo 3: Construir e Executar a Aplicação
+Com tudo configurado, use o Docker Compose para orquestrar e iniciar a aplicação.
 
-Execute o seguinte comando para construir e iniciar os containers:
-
-```bash
+```
+# Constrói a imagem da aplicação e inicia os containers em segundo plano (-d)
 docker-compose up --build -d
+
 ```
 
----
+### Passo 5: Verificar o Funcionamento
 
-### 🔍 Passo 4: Verificar o Funcionamento
+Para garantir que tudo está a correr como esperado, use o seguinte comando:
 
-Verifique se os containers estão rodando corretamente:
-
-```bash
+```
 docker-compose ps
-```
-
----
-
-## ✅ Acesso à Aplicação
-
-Após subir os containers, acesse:
 
 ```
-http://localhost:8000
-```
 
-> Em um servidor remoto, substitua `localhost` pelo IP ou domínio do servidor.
+Você deverá ver os três containers (`estoque-db`, `estoque-app`, `estoque-proxy`) com o estado `Up` ou `running`.
 
----
+### Passo 6: Acessar a Aplicação
 
-## 📤 Exportação de Dados
+A sua aplicação está agora online e pronta para ser usada!
 
-A aplicação permite exportar relatórios em Excel diretamente via interface, utilizando **Pandas** e **openpyxl**.
+-   **Aplicação Web:**  `http://<ENDERECO_IP_DO_SEU_SERVIDOR>/estoque`
+    
+-   **Documentação da API:**  `http://<ENDERECO_IP_DO_SEU_SERVIDOR>/estoque/docs`
+    
 
----
+#### Credenciais Padrão
 
-## 🧑‍💻 Autor
-
-**Sidney L. Carneiro**
-[GitHub - sidneylcarneiro](https://github.com/sidneylcarneiro)
-
----
-
-## 📝 Licença
-
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
-
-```
+-   **Usuário:**  `admin`
+    
+-   **Senha:** A senha que você definiu em `ADMIN_DEFAULT_PASSWORD` no seu arquivo`.env`.
