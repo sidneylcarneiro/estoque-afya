@@ -50,7 +50,7 @@
                     <h1 class="card-title mb-0">Painel do Administrador</h1>
                     <div class="btn-group">
                         <a id="logs-link" href="#" class="btn btn-info">Ver Relatório de Atividades</a>
-                        <a id="profile-link" href="#" class="btn btn-outline-secondary">Voltar para o Perfil</a>
+                        <button id="logout-button" class="btn btn-secondary">Sair</button>
                     </div>
                 </div>
 
@@ -88,20 +88,23 @@
     <script>
         const ROOT_PATH = "{{ root_path|default('', true) }}";
 
+        function logout() {
+            localStorage.removeItem('access_token');
+            window.location.href = `${ROOT_PATH}/login`;
+        }
+
         window.onload = async function() {
             const token = localStorage.getItem('access_token');
             const userList = document.getElementById('user-list');
             const errorDiv = document.getElementById('api-error');
 
             if (!token) {
-                window.location.href = `${ROOT_PATH}/login`;
+                logout();
                 return;
             }
 
-            // --- CORREÇÃO CRUCIAL ---
-            // Ajusta os links para funcionarem com o root_path
+            document.getElementById('logout-button').onclick = logout;
             document.getElementById('logs-link').href = `${ROOT_PATH}/logs`;
-            document.getElementById('profile-link').href = `${ROOT_PATH}/profile`;
 
             async function fetchAndRenderUsers() {
                 try {

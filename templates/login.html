@@ -51,19 +51,17 @@
             <div class="card-body p-5">
                 <h2 class="card-title text-center mb-4 login-header">Gestão de Estoque</h2>
                 <p class="text-center text-muted mb-4">Selecione um usuário para começar</p>
-                
+
                 <div id="user-selection" class="d-grid gap-2 mb-3">
                     <!-- Botões dos usuários serão inseridos aqui -->
                 </div>
 
                 <form id="login-form" class="d-none">
                     <input type="hidden" id="username-input">
-                    
                     <div id="password-field-container" class="mb-3" style="display: none;">
                         <label for="password-input" class="form-label">Senha</label>
                         <input type="password" class="form-control" id="password-input">
                     </div>
-
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary btn-lg">Entrar</button>
                     </div>
@@ -75,8 +73,6 @@
     </div>
 
     <script>
-        // --- AQUI ESTÁ A CORREÇÃO CRUCIAL ---
-        // A variável 'root_path' é injetada aqui pelo template do Jinja2
         const ROOT_PATH = "{{ root_path|default('', true) }}";
 
         window.onload = async function() {
@@ -88,10 +84,9 @@
             const errorMessageDiv = document.getElementById('error-message');
 
             try {
-                // A chamada da API agora usa o ROOT_PATH
                 const response = await fetch(`${ROOT_PATH}/public/users`);
+                if (!response.ok) throw new Error("Falha ao buscar usuários.");
                 const users = await response.json();
-
                 users.forEach(user => {
                     const button = document.createElement('button');
                     button.textContent = user.username;
@@ -102,7 +97,6 @@
                     button.onclick = () => selectUser(user);
                     userSelectionDiv.appendChild(button);
                 });
-
             } catch (error) {
                 showError('Erro ao carregar a lista de usuários.');
             }
@@ -111,7 +105,6 @@
                 usernameInput.value = user.username;
                 userSelectionDiv.classList.add('d-none');
                 loginForm.classList.remove('d-none');
-
                 if (user.role === 'admin') {
                     passwordContainer.style.display = 'block';
                     passwordInput.required = true;
@@ -122,18 +115,38 @@
                     loginForm.requestSubmit();
                 }
             }
+            
+            // --- FUNÇÃO DE REDIRECIONAMENTO INTELIGENTE ---
+            async function redirectUser(token) {
+                try {
+                    const response = await fetch(`${ROOT_PATH}/users/me/`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!response.ok) {
+                        throw new Error('Não foi possível obter os dados do usuário.');
+                    }
+                    const user = await response.json();
+                    
+                    // A lógica correta: se for admin, vai para /admin, senão, para /stock.
+                    if (user.role === 'admin') {
+                        window.location.href = `${ROOT_PATH}/admin`;
+                    } else {
+                        window.location.href = `${ROOT_PATH}/stock`;
+                    }
+                } catch (error) {
+                    showError(error.message);
+                }
+            }
 
             loginForm.onsubmit = async function(event) {
                 event.preventDefault();
                 const username = usernameInput.value;
                 const password = passwordInput.value;
-
                 const formData = new FormData();
                 formData.append('username', username);
                 formData.append('password', password || '');
 
                 try {
-                    // A chamada da API agora usa o ROOT_PATH
                     const response = await fetch(`${ROOT_PATH}/token`, {
                         method: 'POST',
                         body: formData
@@ -145,9 +158,12 @@
                     }
                     
                     const data = await response.json();
-                    localStorage.setItem('access_token', data.access_token);
-                    // O redirecionamento agora usa o ROOT_PATH
-                    window.location.href = `${ROOT_PATH}/profile`;
+                    const token = data.access_token;
+                    localStorage.setItem('access_token', token);
+                    
+                    // --- CHAMADA CORRETA ---
+                    // Chamamos a nossa função de redirecionamento inteligente.
+                    await redirectUser(token);
 
                 } catch (error) {
                     showError(error.message);

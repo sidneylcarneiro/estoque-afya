@@ -12,7 +12,6 @@ import crud, models, schemas
 from database import SessionLocal, engine, Base
 from config import settings
 
-# A aplicação é criada com o 'root_path' para funcionar atrás do NGINX
 app = FastAPI(
     title="Sistema de Gestão de Estoque",
     description="API para gerenciar usuários, estoque e logs de atividades.",
@@ -71,7 +70,7 @@ def require_regular_user(current_user: Annotated[models.User, Depends(get_curren
     return current_user
 
 # =================================
-# Rotas de Interface (HTML) - Com Root Path
+# Rotas de Interface (HTML)
 # =================================
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
@@ -82,9 +81,11 @@ async def root():
 async def login_page(request: Request):
     return templates.TemplateResponse("login.html", {"request": request, "root_path": settings.ROOT_PATH})
 
-@app.get("/profile", response_class=HTMLResponse, include_in_schema=False)
-async def profile_page(request: Request):
-    return templates.TemplateResponse("profile.html", {"request": request, "root_path": settings.ROOT_PATH})
+# --- ROTA REMOVIDA ---
+# A rota para /profile foi eliminada pois a página já não existe.
+# @app.get("/profile", response_class=HTMLResponse, include_in_schema=False)
+# async def profile_page(request: Request):
+#     return templates.TemplateResponse("profile.html", {"request": request, "root_path": settings.ROOT_PATH})
 
 @app.get("/admin", response_class=HTMLResponse, include_in_schema=False)
 async def admin_page(request: Request):

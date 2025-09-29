@@ -33,6 +33,7 @@
                     <div class="btn-group">
                         <button id="export-btn" class="btn btn-success">Exportar para Excel</button>
                         <a id="admin-link" href="#" class="btn btn-outline-secondary">Voltar à Gestão</a>
+                        <button id="logout-button" class="btn btn-secondary">Sair</button>
                     </div>
                 </div>
 
@@ -59,6 +60,11 @@
     <script>
         const ROOT_PATH = "{{ root_path|default('', true) }}";
 
+        function logout() {
+            localStorage.removeItem('access_token');
+            window.location.href = `${ROOT_PATH}/login`;
+        }
+
         window.onload = async function() {
             const token = localStorage.getItem('access_token');
             const tableBody = document.getElementById('logs-table-body');
@@ -66,11 +72,12 @@
             const exportButton = document.getElementById('export-btn');
 
             if (!token) {
-                window.location.href = `${ROOT_PATH}/login`;
+                logout();
                 return;
             }
 
             document.getElementById('admin-link').href = `${ROOT_PATH}/admin`;
+            document.getElementById('logout-button').onclick = logout;
 
             exportButton.addEventListener('click', async () => {
                 try {
