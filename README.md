@@ -1,9 +1,15 @@
 ````markdown
 # Sistema de Gestão de Estoque
 
-Sistema web completo para gestão de estoque, desenvolvido com FastAPI e PostgreSQL, totalmente containerizado com Docker para facilitar o deploy e garantir portabilidade.
+Sistema web completo para gestão de estoque, 
+desenvolvido com FastAPI e PostgreSQL, 
+totalmente containerizado com Docker 
+para facilitar o deploy e garantir portabilidade.
 
-A aplicação permite controle de usuários com níveis diferentes de permissão, gestão de inventário e relatórios detalhados com exportação para Excel.
+A aplicação permite controle de usuários 
+com níveis diferentes de permissão, 
+gestão de inventário e relatórios detalhados 
+com exportação para Excel.
 
 ---
 
@@ -18,13 +24,22 @@ A aplicação permite controle de usuários com níveis diferentes de permissão
 
 ## Visão Geral da Arquitetura
 
-A aplicação é orquestrada pelo Docker Compose e é composta por três serviços principais que se comunicam numa rede interna Docker:
+A aplicação é orquestrada pelo Docker Compose 
+e é composta por três serviços principais 
+que se comunicam numa rede interna Docker:
 
-- **db:** Container que executa o banco de dados PostgreSQL, utilizando a imagem oficial e persistindo dados em volume Docker.
-- **app:** Container que executa a aplicação FastAPI, construído a partir de uma imagem customizada definida no Dockerfile, processando toda a lógica de negócio.
-- **nginx:** Container que atua como Proxy Reverso, único ponto de entrada na porta 80, encaminhando as requisições para o serviço `app`.
+- **db:** Container que executa o banco de dados PostgreSQL, 
+utilizando a imagem oficial e persistindo dados em volume Docker.
+- **app:** Container que executa a aplicação FastAPI, 
+construído a partir de uma imagem customizada definida no Dockerfile, 
+processando toda a lógica de negócio.
+- **nginx:** Container que atua como Proxy Reverso, 
+único ponto de entrada na porta 80, 
+encaminhando as requisições para o serviço `app`.
 
-Essa arquitetura garante portabilidade, segurança e funcionamento consistente em qualquer máquina com Docker.
+Essa arquitetura garante portabilidade, 
+segurança e funcionamento consistente 
+em qualquer máquina com Docker.
 
 ---
 
@@ -111,7 +126,8 @@ http {
 
 ### Passo 3: Configurar Variáveis de Ambiente
 
-Crie o arquivo `.env` na raiz do projeto e configure as variáveis de ambiente (lembre-se de usar valores fortes e únicos):
+Crie o arquivo `.env` na raiz do projeto e configure as variáveis de ambiente 
+(lembre-se de usar valores fortes e únicos):
 
 ```env
 SECRET_KEY="SUA_CHAVE_SECRETA_DE_PRODUCAO_MUITO_FORTE_AQUI"
@@ -121,7 +137,8 @@ ADMIN_DEFAULT_PASSWORD="SENHA_FORTE_PARA_O_BANCO_DE_DADOS"
 ROOT_PATH="/estoque"
 ```
 
-> **Importante:** Nunca commit o arquivo `.env` com dados sensíveis no GitHub. Adicione `.env` ao `.gitignore` para evitar isso.
+> **Importante:** Nunca commit o arquivo `.env` com dados sensíveis no GitHub. 
+Adicione `.env` ao `.gitignore` para evitar isso.
 
 ---
 
