@@ -7,7 +7,6 @@ from typing import List, Annotated
 import pandas as pd
 import io
 
-# Importações locais, incluindo o novo 'config'
 import crud, models, schemas
 from database import SessionLocal, engine, Base
 from config import settings
@@ -19,10 +18,8 @@ app = FastAPI(
     root_path=settings.ROOT_PATH
 )
 
-# Configuração dos templates
 templates = Jinja2Templates(directory="templates")
 
-# Função para obter a sessão do banco de dados
 def get_db():
     db = SessionLocal()
     try:
@@ -30,7 +27,6 @@ def get_db():
     finally:
         db.close()
 
-# Evento de startup para criar as tabelas e o utilizador admin
 @app.on_event("startup")
 def on_startup():
     Base.metadata.create_all(bind=engine)
@@ -40,9 +36,6 @@ def on_startup():
     finally:
         db.close()
 
-# =================================
-# Dependências de Autenticação
-# =================================
 
 def get_current_user(token: Annotated[str, Depends(crud.oauth2_scheme)], db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
@@ -69,9 +62,6 @@ def require_regular_user(current_user: Annotated[models.User, Depends(get_curren
         raise HTTPException(status_code=403, detail="Ação não permitida para administradores.")
     return current_user
 
-# =================================
-# Rotas de Interface (HTML)
-# =================================
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def root():
@@ -81,11 +71,6 @@ async def root():
 async def login_page(request: Request):
     return templates.TemplateResponse("login.html", {"request": request, "root_path": settings.ROOT_PATH})
 
-# --- ROTA REMOVIDA ---
-# A rota para /profile foi eliminada pois a página já não existe.
-# @app.get("/profile", response_class=HTMLResponse, include_in_schema=False)
-# async def profile_page(request: Request):
-#     return templates.TemplateResponse("profile.html", {"request": request, "root_path": settings.ROOT_PATH})
 
 @app.get("/admin", response_class=HTMLResponse, include_in_schema=False)
 async def admin_page(request: Request):
@@ -99,9 +84,6 @@ async def stock_page(request: Request):
 async def logs_page(request: Request):
     return templates.TemplateResponse("logs.html", {"request": request, "root_path": settings.ROOT_PATH})
 
-# =================================
-# Endpoints da API (O resto do ficheiro permanece o mesmo)
-# =================================
 
 @app.post("/token", response_model=schemas.Token)
 async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Session = Depends(get_db)):
