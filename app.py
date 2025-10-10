@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -17,6 +18,8 @@ app = FastAPI(
     version="1.0.0",
     root_path=settings.ROOT_PATH
 )
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
 
@@ -65,7 +68,7 @@ def require_regular_user(current_user: Annotated[models.User, Depends(get_curren
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def root():
-    return RedirectResponse(url="/login")
+    return RedirectResponse(url=f"{settings.ROOT_PATH}/login")
 
 @app.get("/login", response_class=HTMLResponse, include_in_schema=False)
 async def login_page(request: Request):

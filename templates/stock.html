@@ -13,8 +13,12 @@
         body { 
             background-color: #f0f2f5; 
         }
+        .company-logo {
+            max-width: 350px;
+            margin: 2rem auto; /* Centraliza e adiciona margem */
+        }
         .stock-card { 
-            margin-top: 3rem;
+            margin-top: 0; /* Remove a margem superior para acomodar o logo */
             border: none;
             border-radius: 1rem;
         }
@@ -37,6 +41,10 @@
 </head>
 <body>
     <div class="container">
+        <div class="text-center">
+            <img src="{{ url_for('static', path='logo.png') }}" alt="Logo Afya Unigranrio" class="company-logo">
+        </div>
+
         <div class="card stock-card shadow-lg">
             <div class="card-body p-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -298,4 +306,3 @@
     </script>
 </body>
 </html>
-

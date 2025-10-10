@@ -16,10 +16,16 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
+            flex-direction: column;
+        }
+        .company-logo {
+            max-width: 350px;
+            margin-bottom: 2rem;
         }
         .login-card {
             border: none;
             border-radius: 1rem;
+            width: 100%;
         }
         .login-header {
             color: var(--theme-pink);
@@ -46,8 +52,12 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card login-card shadow-lg mx-auto" style="max-width: 450px;">
+    <div class="container" style="max-width: 450px;">
+        <div class="text-center">
+            <img src="{{ url_for('static', path='logo.png') }}" alt="Logo Afya Unigranrio" class="company-logo">
+        </div>
+
+        <div class="card login-card shadow-lg mx-auto">
             <div class="card-body p-5">
                 <h2 class="card-title text-center mb-4 login-header">Gestão de Estoque</h2>
                 <p class="text-center text-muted mb-4">Selecione um usuário para começar</p>
@@ -179,4 +189,3 @@
     </script>
 </body>
 </html>
-
