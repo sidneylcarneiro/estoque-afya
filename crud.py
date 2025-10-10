@@ -4,11 +4,8 @@ from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 import models, schemas
-from config import settings # Importa as configurações
+from config import settings 
 
-# =================================
-# Configuração de Segurança e Hashing
-# =================================
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -20,9 +17,6 @@ def get_password_hash(password: str) -> str:
     """Gera o hash de uma senha."""
     return pwd_context.hash(password)
 
-# =================================
-# Funções de Token e Autenticação
-# =================================
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
@@ -50,16 +44,11 @@ def authenticate_user(db: Session, username: str, password: str | None = None):
     user = get_user_by_username(db, username=username)
     if not user:
         return None
-    # Se o utilizador é admin (tem senha), a senha deve ser verificada
     if user.role == "admin":
         if not password or not verify_password(password, user.hashed_password):
             return None
-    # Se for um utilizador comum, não é necessária senha
     return user
 
-# =================================
-# Funções de Utilizador (CRUD)
-# =================================
 
 def get_user_by_username(db: Session, username: str):
     return db.query(models.User).filter(models.User.username == username).first()
@@ -95,9 +84,6 @@ def delete_user(db: Session, user_id: int):
         db.commit()
     return db_user
 
-# =================================
-# Funções de Inventário
-# =================================
 
 def get_stock_item_by_name(db: Session, name: str):
     """Busca um item de inventário pelo seu nome exato (case-insensitive)."""
@@ -107,7 +93,6 @@ def get_stock_items(db: Session, search: str = ""):
     return db.query(models.StockItem).filter(models.StockItem.name.ilike(f"%{search}%")).all()
 
 def create_stock_item(db: Session, item: schemas.StockItemCreate, user_id: int, username: str):
-    # A restrição de nome duplicado é verificada aqui antes de criar
     db_item = models.StockItem(
         name=item.name,
         quantity=0,
@@ -129,10 +114,6 @@ def delete_stock_item(db: Session, item_id: int):
 def get_stock_item_by_id(db: Session, item_id: int):
     return db.query(models.StockItem).filter(models.StockItem.id == item_id).first()
     
-# =================================
-# Funções de Log
-# =================================
-
 def create_log_entry(db: Session, username: str, action: str):
     db_log = models.LogEntry(username=username, action=action)
     db.add(db_log)
