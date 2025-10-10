@@ -9,8 +9,6 @@ class User(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     role = Column(String, nullable=False, default="user")
     
-    # Nova coluna para guardar a senha criptografada.
-    # É 'nullable=True' porque, por agora, apenas o admin terá senha.
     hashed_password = Column(String, nullable=True)
 
     stock_items_created = relationship("StockItem", back_populates="creator")
