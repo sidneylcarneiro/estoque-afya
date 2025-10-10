@@ -1,7 +1,6 @@
 # docker-compose.yml
 
 services:
-  # Serviço 1: O Banco de Dados PostgreSQL
   db:
     image: postgres:15-alpine
     container_name: estoque-db
@@ -18,7 +17,6 @@ services:
       retries: 5
     restart: unless-stopped
 
-  # Serviço 2: A nossa Aplicação FastAPI
   app:
     container_name: estoque-app
     build: .
@@ -31,7 +29,6 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # Serviço 3: O Proxy Reverso NGINX
   nginx:
     image: nginx:alpine
     container_name: estoque-proxy
