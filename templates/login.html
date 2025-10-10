@@ -53,7 +53,6 @@
                 <p class="text-center text-muted mb-4">Selecione um usuário para começar</p>
 
                 <div id="user-selection" class="d-grid gap-2 mb-3">
-                    <!-- Botões dos usuários serão inseridos aqui -->
                 </div>
 
                 <form id="login-form" class="d-none">
@@ -116,7 +115,6 @@
                 }
             }
             
-            // --- FUNÇÃO DE REDIRECIONAMENTO INTELIGENTE ---
             async function redirectUser(token) {
                 try {
                     const response = await fetch(`${ROOT_PATH}/users/me/`, {
@@ -127,7 +125,6 @@
                     }
                     const user = await response.json();
                     
-                    // A lógica correta: se for admin, vai para /admin, senão, para /stock.
                     if (user.role === 'admin') {
                         window.location.href = `${ROOT_PATH}/admin`;
                     } else {
@@ -161,8 +158,6 @@
                     const token = data.access_token;
                     localStorage.setItem('access_token', token);
                     
-                    // --- CHAMADA CORRETA ---
-                    // Chamamos a nossa função de redirecionamento inteligente.
                     await redirectUser(token);
 
                 } catch (error) {
