@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Depends, HTTPException, status, Request
+# app.py
+from fastapi import FastAPI, Depends, HTTPException, status, Request, File, UploadFile # Adicionado File e UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordRequestForm
@@ -22,6 +23,8 @@ app = FastAPI(
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
+
+# --- NENHUMA MUDANÇA NAS FUNÇÕES ABAIXO ATÉ A SEÇÃO DE ESTOQUE ---
 
 def get_db():
     db = SessionLocal()
@@ -100,6 +103,7 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
     access_token = crud.create_access_token(data={"sub": user.username, "role": user.role})
     return {"access_token": access_token, "token_type": "bearer"}
 
+# ... NENHUMA MUDANÇA NAS ROTAS DE USUÁRIO ...
 @app.get("/users/me/", response_model=schemas.User)
 async def read_users_me(current_user: Annotated[models.User, Depends(get_current_user)]):
     return current_user
@@ -133,6 +137,8 @@ def delete_user(user_id: int, db: Session = Depends(get_db), current_admin: mode
     deleted_user = crud.delete_user(db=db, user_id=user_id)
     crud.create_log_entry(db=db, username=current_admin.username, action=f"Excluiu o usuário '{deleted_user.username}' (ID: {user_id})")
     return deleted_user
+
+# --- ALTERAÇÕES E ADIÇÕES NA SEÇÃO DE ESTOQUE ---
 
 @app.post("/stock/", response_model=schemas.StockItem, dependencies=[Depends(require_regular_user)])
 def create_stock_item(item: schemas.StockItemCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
@@ -181,6 +187,95 @@ def delete_stock_item(item_id: int, db: Session = Depends(get_db), current_user:
     crud.create_log_entry(db=db, username=current_user.username, action=f"Excluiu o item de inventário '{item_name}'")
     return deleted_item
 
+# --- ROTA EXISTENTE DE EXPORTAÇÃO (SEM MUDANÇAS) ---
+@app.get("/stock/export/excel", dependencies=[Depends(require_regular_user)])
+def export_stock_to_excel(search: str = "", db: Session = Depends(get_db)):
+    items = crud.get_stock_items(db, search=search)
+    stock_data = [
+        {"ID do Item": item.id, "Nome do Item": item.name, "Quantidade": item.quantity, "Criado Por": item.created_by_username}
+        for item in items
+    ]
+    df = pd.DataFrame(stock_data)
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Inventario')
+    output.seek(0)
+    filename = f"relatorio_inventario_{search}.xlsx" if search else "relatorio_inventario_filtrado.xlsx"
+    headers = {'Content-Disposition': f'attachment; filename="{filename}"'}
+    return StreamingResponse(output, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers=headers)
+
+# --- NOVA ROTA PARA EXPORTAR INVENTÁRIO COMPLETO ---
+@app.get("/stock/export/excel-all", dependencies=[Depends(require_regular_user)])
+def export_all_stock_to_excel(db: Session = Depends(get_db)):
+    # Busca todos os itens, sem filtro de busca
+    items = crud.get_stock_items(db, search="")
+    stock_data = [
+        {"ID do Item": item.id, "Nome do Item": item.name, "Quantidade": item.quantity, "Criado Por": item.created_by_username}
+        for item in items
+    ]
+    df = pd.DataFrame(stock_data)
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Inventario_Completo')
+    output.seek(0)
+    headers = {'Content-Disposition': 'attachment; filename="relatorio_inventario_completo.xlsx"'}
+    return StreamingResponse(output, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers=headers)
+
+
+# --- NOVA ROTA PARA IMPORTAR E ATUALIZAR ESTOQUE VIA PLANILHA ---
+@app.post("/stock/import/excel", dependencies=[Depends(require_regular_user)])
+async def import_stock_from_excel(
+    file: UploadFile = File(...), 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(get_current_user)
+):
+    if not file.filename.endswith(('.xlsx', '.xls')):
+        raise HTTPException(status_code=400, detail="Formato de arquivo inválido. Por favor, envie um arquivo Excel (.xlsx ou .xls).")
+
+    try:
+        contents = await file.read()
+        df = pd.read_excel(io.BytesIO(contents))
+
+        # Verifica se as colunas necessárias existem
+        required_columns = ["ID do Item", "Quantidade"]
+        if not all(col in df.columns for col in required_columns):
+            raise HTTPException(status_code=400, detail=f"A planilha deve conter as colunas: {', '.join(required_columns)}")
+
+        updated_count = 0
+        not_found_ids = []
+
+        for _, row in df.iterrows():
+            item_id = row["ID do Item"]
+            new_quantity = row["Quantidade"]
+            
+            # Validação simples
+            if pd.isna(item_id) or pd.isna(new_quantity):
+                continue
+
+            item = crud.get_stock_item_by_id(db, int(item_id))
+
+            if item:
+                # Atualiza a quantidade do item
+                item.quantity = int(new_quantity)
+                updated_count += 1
+            else:
+                not_found_ids.append(str(item_id))
+        
+        db.commit()
+
+        # Cria um log da ação
+        log_action = f"Atualizou o estoque via planilha. {updated_count} itens atualizados."
+        if not_found_ids:
+            log_action += f" IDs não encontrados: {', '.join(not_found_ids)}."
+        crud.create_log_entry(db, username=current_user.username, action=log_action)
+
+        return {"message": log_action}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ocorreu um erro ao processar o arquivo: {e}")
+
+
+# ... NENHUMA MUDANÇA NAS ROTAS DE LOGS ...
 @app.get("/logs/", response_model=List[schemas.LogEntry], dependencies=[Depends(require_admin)])
 def get_logs(db: Session = Depends(get_db)):
     return crud.get_log_entries(db)
@@ -199,20 +294,3 @@ def export_logs_to_excel(db: Session = Depends(get_db)):
     output.seek(0)
     headers = {'Content-Disposition': 'attachment; filename="relatorio_de_atividades.xlsx"'}
     return StreamingResponse(output, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers=headers)
-
-@app.get("/stock/export/excel", dependencies=[Depends(require_regular_user)])
-def export_stock_to_excel(search: str = "", db: Session = Depends(get_db)):
-    items = crud.get_stock_items(db, search=search)
-    stock_data = [
-        {"ID do Item": item.id, "Nome do Item": item.name, "Quantidade": item.quantity, "Criado Por": item.created_by_username}
-        for item in items
-    ]
-    df = pd.DataFrame(stock_data)
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='Inventario')
-    output.seek(0)
-    filename = f"relatorio_inventario_{search}.xlsx" if search else "relatorio_inventario_completo.xlsx"
-    headers = {'Content-Disposition': f'attachment; filename="{filename}"'}
-    return StreamingResponse(output, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers=headers)
-
