@@ -74,14 +74,34 @@
 
         window.onload = async function() {
             const token = localStorage.getItem('access_token');
-            const tableBody = document.getElementById('logs-table-body');
-            const errorDiv = document.getElementById('api-error');
-            const exportButton = document.getElementById('export-btn');
+            if (!token) { logout(); return; }
 
-            if (!token) {
+            // --- NOVO BLOCO DE VERIFICAÇÃO DE PERFIL ---
+            try {
+                const meResponse = await fetch(`${ROOT_PATH}/users/me/`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (meResponse.status === 401) { logout(); return; }
+
+                const currentUser = await meResponse.json();
+                
+                // Se o usuário NÃO for admin, redireciona para a página de estoque
+                if (currentUser.role !== 'admin') {
+                    alert('Acesso negado. Apenas administradores podem ver os relatórios.');
+                    window.location.href = `${ROOT_PATH}/stock`;
+                    return; // Interrompe a execução do script
+                }
+            } catch (error) {
+                console.error('Erro ao verificar o perfil do usuário:', error);
                 logout();
                 return;
             }
+            // --- FIM DO NOVO BLOCO ---
+
+            const tableBody = document.getElementById('logs-table-body');
+            const errorDiv = document.getElementById('api-error');
+            const exportButton = document.getElementById('export-btn');
 
             document.getElementById('admin-link').href = `${ROOT_PATH}/admin`;
             document.getElementById('logout-button').onclick = logout;

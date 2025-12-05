@@ -49,7 +49,9 @@
 <body>
     <div class="container">
         <div class="text-center">
-            <img src="{{ url_for('static', path='logo.png') }}" alt="Logo Afya Unigranrio" class="company-logo">
+            <a id="logo-link" href="#" style="cursor: pointer;">
+                <img src="{{ url_for('static', path='logo.png') }}" alt="Logo Afya Unigranrio" class="company-logo">
+            </a>
         </div>
 
         <div class="card admin-card shadow-lg">
@@ -102,16 +104,39 @@
 
         window.onload = async function() {
             const token = localStorage.getItem('access_token');
-            const userList = document.getElementById('user-list');
-            const errorDiv = document.getElementById('api-error');
+            if (!token) { logout(); return; }
 
-            if (!token) {
+            try {
+                const meResponse = await fetch(`${ROOT_PATH}/users/me/`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (meResponse.status === 401) { logout(); return; }
+
+                const currentUser = await meResponse.json();
+                
+                if (currentUser.role !== 'admin') {
+                    alert('Acesso negado. Apenas administradores podem gerenciar usuários.');
+                    window.location.href = `${ROOT_PATH}/stock`;
+                    return;
+                }
+            } catch (error) {
+                console.error('Erro ao verificar o perfil do usuário:', error);
                 logout();
                 return;
             }
 
+            const userList = document.getElementById('user-list');
+            const errorDiv = document.getElementById('api-error');
+
             document.getElementById('logout-button').onclick = logout;
             document.getElementById('logs-link').href = `${ROOT_PATH}/logs`;
+
+            // NOVO: Adiciona a função de logout ao logo
+            document.getElementById('logo-link').onclick = function(event) {
+                event.preventDefault();
+                logout();
+            };
 
             async function fetchAndRenderUsers() {
                 try {
